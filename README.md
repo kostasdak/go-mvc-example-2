@@ -198,20 +198,36 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 // this function handles the POST action from "Contact Us" page 
 func ContactPostForm(w http.ResponseWriter, r *http.Request) {
 
-	//test ... I have access to products model !!!
-	fmt.Println("**********")
+	//test : I have access to products model !!!
+	fmt.Print("\n\n")
+	fmt.Println("********** ContactPostForm **********")
 	fmt.Println("Table Fields : ", c.Models["/products"].Fields)
 
-	//read data from table products even this is a POST action for contact page
-	rows, _ := c.Models["/products"].GetAllRecords(100)
-	fmt.Println("**********")
-	fmt.Println("Select Rows : ", rows)
+	//read data from table products (Model->products) even if this is a POST action for contact page
+	fmt.Print("\n\n")
+	rows, _ := c.Models["/products"].GetRecords([]gomvc.Filter{}, 100)
+	fmt.Println("Select Rows Example 1 : ", rows)
 
-	//test form Posted fields
-	fmt.Println("**********")
-	fmt.Println("Form Fields : ", r.Form)
+	//read data from table products (Model->products) even if this is a POST action for contact page
+	fmt.Print("\n\n")
+	id, _ := c.Models["/products"].GetLastId()
+	fmt.Println("Select Rows Example 1 : ", id)
 
-	//test session message
+	//read data from table products (Model->products) with filter (id=1)
+	fmt.Print("\n\n")
+	var f = make([]gomvc.Filter, 0)
+	f = append(f, gomvc.Filter{Field: "id", Operator: "=", Value: 1})
+	rows, err := c.Models["/products"].GetRecords(f, 0)
+	if err != nil {
+		fmt.Println(err)
+	}
+	fmt.Println("Select Rows Example 2 : ", rows)
+
+	//test : Print Posted Form fields
+	fmt.Print("\n\n")
+	fmt.Println("Form fields : ", r.Form)
+
+	//test : Set session message
 	c.GetSession().Put(r.Context(), "error", "Hello From Session")
 
 	//redirect to homepage
