@@ -1,27 +1,27 @@
 # Example 02 - gomvc package
 
-Example 02 for MVC (Model View Controller) implementation with Golang using MySql database
+Example 02</br>
+gomvc - MVC (Model View Controller) implementation with Golang using MySQL database
 
 ## Overview
 Web app with 5 pages :</br>
-    - Home (static)</br>
-    - Products -> View, Edit, Create, Delete product</br>
-    - Related table colors for each product</br>
-    - About (static)</br>
-    - Contact (static)</br>
+    * Home (static)</br>
+    * Products -> View products / product (related table colors for each product)</br>
+    * Products Edit, Create, Delete product</br>
+    * About (static)</br>
+    * Contact (static)</br>
 
 Database :</br>
-`/database/example_1.sql`</br>
+`/database/example_2.sql`</br>
 
 Steps :</br>
+* Setup MySQL database `example_2.sql` and MySQL server
 * Edit config file `configs/config.yml`
-* Setup MySql database `example_1.sql`
 * Load config file `configs/config.yaml`</br>
-* Connect to MySql database</br>
-* Start your server</br>
+* Connect to MySQL database</br>
 * Write code to initialize your Models and Controllers</br>
 * Write your standard text/Template files (Views)</br>
-* Enjoy</br>
+* Build and enjoy</br>
 
 
 ### Edit configuration file
@@ -73,9 +73,12 @@ database:
   dbpass: ""
 ```
 
-### Load config file, Connect database, Start server
+### Load config file, Connect database, Start http server
 
 ```
+
+var c gomvc.Controller
+
 func main() {
 
 	// Load Configuration file
@@ -104,26 +107,35 @@ func main() {
 }
 ```
 
-### Write code to use gomvc package
+### Write code with gomvc package
 ### AppHandler
 
 ```
 func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 
-	// initialize
+	// initialize controller
 	c.Initialize(db, cfg)
 
 	// load template files ... path : /web/templates
+	// required : homepagefile & template file
+	// see [template names] for details
 	c.CreateTemplateCache("home.view.tmpl", "base.layout.html")
 
-	// *** Start registering url, actions and models ***
-	// home page
+	// *** Start registering urls, actions and models ***
+
+	// RegisterAction(url, next, action, model)
+	// url = url routing path
+	// next = redirect after action complete, use in POST actions if necessary
+	// model = database model object for CRUD operations
+
+	// home page : can have two urls "/" and "/home"
 	c.RegisterAction("/", "", gomvc.ActionView, nil)
 	c.RegisterAction("/home", "", gomvc.ActionView, nil)
 
-	// create view model for [products] table, use this model only for view data
-	pViewModel := gomvc.Model{DB: db, IdField: "id", TableName: "products"}
-	pViewModel.AddRelation(db, "colors", "id", "product_id", gomvc.ModelJoinLeft)
+	// create model for [products] database table
+	// use the same model for all action in this example
+	pViewModel := gomvc.Model{DB: db, PKField: "id", TableName: "products", OrderString: "ORDER BY id DESC"}
+	pViewModel.AddRelation(db, "colors", "id", "product_id", gomvc.ModelJoinLeft, gomvc.ResultStyleSubresult)
 
 	// optional assign labels for each table field. Can be used in template view code
 	pViewModel.AssignLabels(map[string]string{
@@ -140,32 +152,40 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 		"colors.color":      "Color", //Related field in table [colors]
 	})
 
-	// view products
+	// view products ... / show all products || /products/view/{id} for one product
 	c.RegisterAction("/products", "", gomvc.ActionView, &pViewModel)
 	c.RegisterAction("/products/view/*", "", gomvc.ActionView, &pViewModel)
 
-	// create edit model for table [products] -> used for create, update, delete only
-	pEditModel := gomvc.Model{DB: db, IdField: "id", TableName: "products"}
+	// create edit model for table [products] -> used for create, update, delete actions only
+	pEditModel := gomvc.Model{DB: db, PKField: "id", TableName: "products"}
 
-	// create product
+	// build create product action ... this url has two actions
+	// #1 View page -> empty product form no redirect url (no next url required)
+	// #2 Post form data to create a new record in table [products] -> then redirect to [next] url -> products page
 	c.RegisterAction("/products/create", "", gomvc.ActionView, &pEditModel)
 	c.RegisterAction("/products/create", "/products", gomvc.ActionCreate, &pEditModel)
 
-	// edit product
+	// build edit product actions ... this url has two actions
+	// #1 View page with the product form -> edit form (no next url required)
+	// #2 Post form data to update record in table [products] -> then redirect to [next] url -> products page
 	c.RegisterAction("/products/edit/*", "", gomvc.ActionView, &pEditModel)
 	c.RegisterAction("/products/edit/*", "/products", gomvc.ActionUpdate, &pEditModel)
 
-	// delete product
+	// build delete product actions ... this url has two actions
+	// #1 View page with the product form -> edit form [locked] to confirm detetion (no next url required)
+	// #2 Post form data to delete record in table [products] -> then redirect to [next] url -> products page
 	c.RegisterAction("/products/delete/*", "", gomvc.ActionView, &pEditModel)
 	c.RegisterAction("/products/delete/*", "/products", gomvc.ActionDelete, &pEditModel)
 
-	// about page
+	// build about page ... static page, no table/model, no [next] url
 	c.RegisterAction("/about", "", gomvc.ActionView, nil)
 
-	// contact page
+	// build contact page ... static page, no table/model, no [next] url
 	c.RegisterAction("/contact", "", gomvc.ActionView, nil)
 
-	// custom action
+	// build contact page POST action ... static page, no table/model, no [next] url
+	// Demostrating how to register a custom func to handle the http request/response using your oun code
+	// and handle POST data and have access to database through the controller and model object
 	c.RegisterCustomAction("/contact", "", gomvc.HttpPOST, nil, ContactPostForm)
 	return c.Router
 }
