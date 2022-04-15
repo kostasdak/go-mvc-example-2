@@ -43,7 +43,9 @@
                                         {{range .}}
                                             {{ with .Values }}
                                                 {{range $i, $a := .}}
-                                                    {{if eq $i 2}}{{ $a }}</br>{{end}}
+                                                    {{if eq $i 2}}
+                                                        <div class="col-1 btn" style="background-color: {{$a}};">&nbsp;</div>
+                                                    {{end}}
                                                 {{end}}
                                             {{end}}
                                         {{end}}
