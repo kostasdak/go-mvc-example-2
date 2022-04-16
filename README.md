@@ -142,7 +142,7 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 	pViewModel := gomvc.Model{DB: db, PKField: "id", TableName: "products", OrderString: "ORDER BY id DESC"}
 	pViewModel.AddRelation(db, "colors", "id", gomvc.SQLKeyPair{LocalKey: "id", ForeignKey: "product_id"}, gomvc.ModelJoinLeft, gomvc.ResultStyleSubresult)
 
-	// optional assign labels for each table field. Can be used in template view code
+	// optionally assign labels for each table field. Can be used in template view code
 	pViewModel.AssignLabels(map[string]string{
 		"id":                "Id",
 		"code":              "Code",
