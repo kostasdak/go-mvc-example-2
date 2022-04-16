@@ -57,9 +57,14 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 	// next = redirect after action complete, use in POST actions if necessary
 	// model = database model object for CRUD operations
 
+	// create model for Home page content - Set default query to read specific only content from table pages
+	pHomeModel := gomvc.Model{DB: db, PKField: "id", TableName: "pages", OrderString: "ORDER BY id DESC"}
+	pHomeModel.DefaultQuery = "SELECT content FROM pages WHERE name='home'"
+
 	// home page : can have two urls "/" and "/home" -> home.view.tmpl must exist
-	c.RegisterAction("/", "", gomvc.ActionView, nil)
-	c.RegisterAction("/home", "", gomvc.ActionView, nil)
+	// use pHomeModel for dynamic page content
+	c.RegisterAction("/", "", gomvc.ActionView, &pHomeModel)
+	c.RegisterAction("/home", "", gomvc.ActionView, &pHomeModel)
 
 	// create model for [products] database table
 	// use the same model for all action in this example
