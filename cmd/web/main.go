@@ -63,8 +63,8 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 
 	// home page : can have two urls "/" and "/home" -> home.view.tmpl must exist
 	// use pHomeModel for dynamic page content
-	c.RegisterAction("/", "", gomvc.ActionView, &pHomeModel)
-	c.RegisterAction("/home", "", gomvc.ActionView, &pHomeModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/"}, gomvc.ActionView, &pHomeModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/home"}, gomvc.ActionView, &pHomeModel)
 
 	// create model for [products] database table
 	// use the same model for all action in this example
@@ -87,8 +87,8 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 	})
 
 	// view products ... / show all products || /products/view/{id} for one product
-	c.RegisterAction("/products", "", gomvc.ActionView, &pViewModel)
-	c.RegisterAction("/products/view/*", "", gomvc.ActionView, &pViewModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products"}, gomvc.ActionView, &pViewModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/view/*"}, gomvc.ActionView, &pViewModel)
 
 	// create edit model for table [products] -> used for create, update, delete actions only
 	pEditModel := gomvc.Model{DB: db, PKField: "id", TableName: "products"}
@@ -97,48 +97,48 @@ func AppHandler(db *sql.DB, cfg *gomvc.AppConfig) http.Handler {
 	// prepare create product action ... this url has two actions
 	// #1 View page -> empty product form no redirect url (no next url required)
 	// #2 Post form data to create a new record in table [products] -> then redirect to [next] url -> products page
-	c.RegisterAction("/products/create", "", gomvc.ActionView, &pEditModel)
-	c.RegisterAction("/products/create", "/products", gomvc.ActionCreate, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/create"}, gomvc.ActionView, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/create", NextURL: "/products"}, gomvc.ActionCreate, &pEditModel)
 
 	// prepare edit product actions ... this url has two actions
 	// #1 View page with the product form -> edit form (no next url required)
 	// #2 Post form data to update record in table [products] -> then redirect to [next] url -> products page
-	c.RegisterAction("/products/edit/*", "", gomvc.ActionView, &pEditModel)
-	c.RegisterAction("/products/edit/*", "/products", gomvc.ActionUpdate, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/edit/*"}, gomvc.ActionView, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/edit/*", NextURL: "products"}, gomvc.ActionUpdate, &pEditModel)
 
 	// prepare delete product actions ... this url has two actions
 	// #1 View page with the product form -> edit form [locked] to confirm detetion (no next url required)
 	// #2 Post form data to delete record in table [products] -> then redirect to [next] url -> products page
-	c.RegisterAction("/products/delete/*", "", gomvc.ActionView, &pEditModel)
-	c.RegisterAction("/products/delete/*", "/products", gomvc.ActionDelete, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/delete/*"}, gomvc.ActionView, &pEditModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/products/delete/*", NextURL: "/products"}, gomvc.ActionDelete, &pEditModel)
 
 	// create product color model
 	cModel := gomvc.Model{DB: db, PKField: "id", TableName: "colors"}
 	cModel.AddRelation(db, "products", "id", gomvc.SQLKeyPair{LocalKey: "product_id", ForeignKey: "id"}, gomvc.ModelJoinInner, gomvc.ResultStyleFullresult)
 
 	// prepare add product color page
-	c.RegisterAction("/productcolor/add/*", "", gomvc.ActionView, &cModel)
-	c.RegisterAction("/productcolor/add/*", "/products", gomvc.ActionCreate, &cModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/productcolor/add/*"}, gomvc.ActionView, &cModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/productscolor/add/*", NextURL: "/products"}, gomvc.ActionCreate, &cModel)
 
 	// prepare edit product color page
-	c.RegisterAction("/productcolor/edit/*", "", gomvc.ActionView, &cModel)
-	c.RegisterAction("/productcolor/edit/*", "/products", gomvc.ActionUpdate, &cModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/productcolor/edit/*"}, gomvc.ActionView, &cModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/productcolor/edit/*", NextURL: "/products"}, gomvc.ActionUpdate, &cModel)
 
 	//prepare delete action / ONLY for post, no view file required
 	//redirect will take action after delete action finish
 	//see productcolor.edit.tmpl -> file has a form for post to -> productcolor/delete/{id}
-	c.RegisterAction("/productcolor/delete/*", "/products", gomvc.ActionDelete, &cModel)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/productcolor/delete/*", NextURL: "/products"}, gomvc.ActionDelete, &cModel)
 
 	// prepare about page ... static page, no table/model, no [next] url
-	c.RegisterAction("/about", "", gomvc.ActionView, nil)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/about"}, gomvc.ActionView, nil)
 
 	// prepare contact page ... static page, no table/model, no [next] url
-	c.RegisterAction("/contact", "", gomvc.ActionView, nil)
+	c.RegisterAction(gomvc.ActionRouting{URL: "/contact"}, gomvc.ActionView, nil)
 
 	// prepare contact page POST action ... static page, no table/model, no [next] url
 	// Demostrating how to register a custom func to handle the http request/response using your oun code
 	// and handle POST data and have access to database through the controller and model object
-	c.RegisterCustomAction("/contact", "", gomvc.HttpPOST, nil, ContactPostForm)
+	c.RegisterCustomAction(gomvc.ActionRouting{URL: "/contact"}, gomvc.HttpPOST, nil, ContactPostForm)
 	return c.Router
 }
 
